@@ -1,0 +1,24 @@
+{
+  "name": "term-dock-workspace",
+  "private": true,
+  "version": "0.1.0",
+  "packageManager": "pnpm@11.7.0",
+  "engines": {
+    "node": ">=22.0.0",
+    "pnpm": ">=11.7.0"
+  },
+  "scripts": {
+    "dev": "pnpm --filter @term-dock/desktop dev",
+    "dev:web": "pnpm --filter @term-dock/web dev",
+    "build": "pnpm -r --if-present build",
+    "test": "pnpm -r --if-present test",
+    "lint": "biome lint apps packages",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "tauri": "pnpm --filter @term-dock/desktop tauri"
+  },
+  "devDependencies": {
+    "prettier": "^3.6.0",
+    "@biomejs/biome": "2.5.3"
+  }
+}

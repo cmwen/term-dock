@@ -1,0 +1,200 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta
+      name="description"
+      content="Term Dock is a durable, local-first workspace terminal for developers and coding agents."
+    />
+    <title>Term Dock — Durable developer workspaces</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <a class="skip-link" href="#content">Skip to content</a>
+    <header class="site-header">
+      <a class="brand" href="./" aria-label="Term Dock documentation home">
+        <span class="brand-mark" aria-hidden="true">›_</span>
+        <span>Term Dock</span>
+      </a>
+      <nav aria-label="Primary navigation">
+        <a href="#start">Get started</a>
+        <a href="#principles">Principles</a>
+        <a href="#architecture">Architecture</a>
+        <a class="nav-github" href="https://github.com/cmwen/term-dock"
+          >GitHub ↗</a
+        >
+      </nav>
+    </header>
+
+    <main id="content">
+      <section class="hero">
+        <p class="eyebrow">LOCAL-FIRST · OPEN SOURCE · v0.1.0</p>
+        <h1>The terminal workspace that stays <em>findable.</em></h1>
+        <p class="hero-copy">
+          Term Dock gives every local or SSH terminal a durable workspace, an
+          attachable session, and a safe path back into work—without turning
+          terminal output into cloud data.
+        </p>
+        <div class="hero-actions">
+          <a class="button primary" href="#start">Start using Term Dock</a>
+          <a
+            class="button secondary"
+            href="https://github.com/cmwen/term-dock/releases/tag/v0.1.0"
+          >
+            View the release ↗
+          </a>
+        </div>
+        <div
+          class="terminal-window"
+          aria-label="Example Term Dock terminal session"
+        >
+          <div class="terminal-bar">
+            <span></span><span></span><span></span><b>workspace: term-dock</b>
+          </div>
+          <pre><code><span class="prompt">term-dock</span> <span class="muted">~/dev/term-dock</span>
+<span class="cursor">›</span> pnpm test
+<span class="success">✓</span> 29 tests passed
+<span class="cursor">›</span> <span class="caret"></span></code></pre>
+        </div>
+      </section>
+
+      <section class="section" id="start">
+        <div class="section-heading">
+          <p class="eyebrow">QUICK START</p>
+          <h2>Run locally in three commands.</h2>
+        </div>
+        <div class="quick-start">
+          <ol>
+            <li>
+              <strong>Install the project dependencies.</strong
+              ><code>pnpm install</code>
+            </li>
+            <li>
+              <strong>Launch the desktop application.</strong
+              ><code>pnpm tauri dev</code>
+            </li>
+            <li>
+              <strong>Open a workspace and start a terminal.</strong
+              ><span>Its definition and session state are saved locally.</span>
+            </li>
+          </ol>
+          <aside>
+            <h3>Requirements</h3>
+            <p>
+              Node.js 22+, pnpm 11.7+, TypeScript 7.0.2, Rust 1.85+, and the
+              platform prerequisites for Tauri.
+            </p>
+            <a href="https://v2.tauri.app/start/prerequisites/"
+              >Tauri prerequisites ↗</a
+            >
+          </aside>
+        </div>
+      </section>
+
+      <section class="section features" id="principles">
+        <div class="section-heading">
+          <p class="eyebrow">DESIGNED FOR REAL WORK</p>
+          <h2>Useful structure, careful boundaries.</h2>
+        </div>
+        <div class="feature-grid">
+          <article>
+            <span class="feature-number">01</span>
+            <h3>Durable by default</h3>
+            <p>
+              Workspaces carry their directory, startup command, SSH target, and
+              session identity so you can resume rather than reconstruct.
+            </p>
+          </article>
+          <article>
+            <span class="feature-number">02</span>
+            <h3>One controller at a time</h3>
+            <p>
+              Only the client with the in-memory controller capability can send
+              input, resize, or terminate a live terminal. Viewers stay
+              read-only.
+            </p>
+          </article>
+          <article>
+            <span class="feature-number">03</span>
+            <h3>AI-ready, not AI-leaky</h3>
+            <p>
+              Export a versioned, provider-neutral workspace summary. Terminal
+              output, secrets, commands, and telemetry are excluded.
+            </p>
+          </article>
+          <article>
+            <span class="feature-number">04</span>
+            <h3>Remote-ready architecture</h3>
+            <p>
+              The versioned broker contract supports a future authenticated
+              relay without changing the native trust boundary.
+            </p>
+          </article>
+        </div>
+      </section>
+
+      <section class="section architecture" id="architecture">
+        <div class="section-heading">
+          <p class="eyebrow">HOW IT FITS TOGETHER</p>
+          <h2>A small, explicit authority boundary.</h2>
+        </div>
+        <div
+          class="architecture-diagram"
+          role="img"
+          aria-label="The desktop and web clients use a versioned broker contract. The local Rust host owns PTYs, grants, deep links, and persistence."
+        >
+          <div class="diagram-clients">
+            <div>Desktop client</div>
+            <div>Future web client</div>
+          </div>
+          <div class="diagram-arrow">versioned broker contract →</div>
+          <div class="diagram-host">
+            <strong>Local Rust host</strong>
+            <span>PTYS · grants · deep links · persistence</span>
+          </div>
+        </div>
+        <p class="architecture-note">
+          The host owns the shell and authorization decisions. User interfaces
+          consume typed session facts rather than inferring authority from
+          display state.
+        </p>
+      </section>
+
+      <section class="section docs-section">
+        <div class="section-heading">
+          <p class="eyebrow">REFERENCE</p>
+          <h2>Read the contracts behind the product.</h2>
+        </div>
+        <div class="doc-links">
+          <a href="https://github.com/cmwen/term-dock/blob/main/PRD.md"
+            ><span>01</span><b>Product requirements</b><i>→</i></a
+          >
+          <a
+            href="https://github.com/cmwen/term-dock/blob/main/docs/ARCHITECTURE.md"
+            ><span>02</span><b>Architecture</b><i>→</i></a
+          >
+          <a
+            href="https://github.com/cmwen/term-dock/blob/main/docs/PROTOCOL.md"
+            ><span>03</span><b>Session-broker protocol</b><i>→</i></a
+          >
+          <a href="https://github.com/cmwen/term-dock/blob/main/docs/AI.md"
+            ><span>04</span><b>AI data contract</b><i>→</i></a
+          >
+          <a href="https://github.com/cmwen/term-dock/blob/main/AGENTS.md"
+            ><span>05</span><b>Contributor guide</b><i>→</i></a
+          >
+        </div>
+      </section>
+    </main>
+
+    <footer>
+      <a class="brand" href="./"
+        ><span class="brand-mark" aria-hidden="true">›_</span
+        ><span>Term Dock</span></a
+      >
+      <p>MIT licensed. Built for developers who need their context to last.</p>
+      <a href="https://github.com/cmwen/term-dock">Source on GitHub ↗</a>
+    </footer>
+  </body>
+</html>

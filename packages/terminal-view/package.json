@@ -1,0 +1,26 @@
+{
+  "name": "@term-dock/terminal-view",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "types": "./src/index.ts",
+  "scripts": {
+    "build": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@term-dock/broker-client": "workspace:*",
+    "@term-dock/broker-contract": "workspace:*",
+    "@xterm/xterm": "^6.0.0-beta.80",
+    "lucide-react": "^0.468.0",
+    "react": "^19.2.0"
+  },
+  "devDependencies": {
+    "@types/react": "^19.2.0",
+    "typescript": "7.0.2",
+    "vitest": "^4.0.0"
+  }
+}

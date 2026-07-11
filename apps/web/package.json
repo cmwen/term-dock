@@ -1,0 +1,29 @@
+{
+  "name": "@term-dock/web",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@term-dock/broker-client": "workspace:*",
+    "@term-dock/broker-contract": "workspace:*",
+    "@term-dock/terminal-view": "workspace:*",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0"
+  },
+  "devDependencies": {
+    "@testing-library/jest-dom": "^6.9.0",
+    "@testing-library/react": "^16.3.0",
+    "@types/react": "^19.2.0",
+    "@types/react-dom": "^19.2.0",
+    "@vitejs/plugin-react": "^5.1.0",
+    "jsdom": "^27.1.0",
+    "typescript": "7.0.2",
+    "vite": "^7.2.0",
+    "vitest": "^4.0.0"
+  }
+}

@@ -1,0 +1,61 @@
+.terminal-pane {
+  margin-top: 18px;
+  border: 1px solid #32415a;
+  background: #101722;
+  border-radius: 12px;
+  overflow: hidden;
+}
+.terminal-heading {
+  padding: 14px 16px;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  border-bottom: 1px solid #2c3749;
+}
+.terminal-heading .eyebrow {
+  margin: 0 0 4px;
+}
+.terminal-heading span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: #96a6bd;
+}
+.terminal-identity {
+  display: block;
+  color: #e5edf9;
+  font-size: 13px;
+  font-weight: 650;
+}
+.terminal-heading .terminal-location {
+  color: #7f90a8;
+  font-size: 11px;
+  overflow-wrap: anywhere;
+}
+.terminal-surface {
+  min-height: 420px;
+  padding: 12px;
+  background: #0b1018;
+}
+.terminal-surface .xterm {
+  height: 420px;
+}
+.terminal-confirm {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: #f1c1c9;
+  font-size: 12px;
+}
+.danger-button {
+  border: 1px solid #a84959;
+  background: #5d2931;
+  color: #ffe0e4;
+}
+.danger-button:disabled {
+  opacity: 0.6;
+  cursor: progress;
+}
