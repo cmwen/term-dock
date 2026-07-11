@@ -62,6 +62,7 @@ The root is a pnpm workspace. Run scripts from the repository root so every futu
 
 ## Documents
 
+- [Documentation site](https://cmwen.github.io/term-dock/)
 - [Product requirements](./PRD.md)
 - [Technical research](./RESEARCH.md)
 - [Architecture](./docs/ARCHITECTURE.md)
