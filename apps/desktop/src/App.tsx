@@ -240,7 +240,8 @@ export default function App() {
       setAttachedSessionId(existing.id);
       return;
     }
-    await api.launchWorkspace(id);
+    const session = await api.launchWorkspace(id);
+    setAttachedSessionId(session.id);
     await refresh();
   }
   async function create(input: CreateWorkspace) {

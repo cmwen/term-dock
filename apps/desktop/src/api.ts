@@ -61,6 +61,49 @@ let demoSessions: Session[] = [
 let demoRemoteGrants: RemoteGrantSummary[] = [];
 /** Runtime-only controller capabilities mirror the native broker's leases. */
 const demoControllerAttachments = new Map<string, string>();
+const demoInputBuffers = new Map<string, string>();
+const demoSessionSubscribers = new Map<
+  string,
+  Set<(event: SessionEvent) => void>
+>();
+
+function publishDemoOutput(sessionId: string, data: string) {
+  let emitted: SessionEvent | undefined;
+  demoSessions = demoSessions.map((session) => {
+    if (session.id !== sessionId) return session;
+    const cursor = session.cursor + 1;
+    emitted = { type: "output", sessionId, cursor, data };
+    return {
+      ...session,
+      state: "running",
+      cursor,
+      outputPreview: `${session.outputPreview}${data}`.slice(-2_000),
+      lastActivityAt: iso(),
+      activity: {
+        state: "running",
+        confidence: "fact",
+        reason: "Recent terminal output",
+      },
+    };
+  });
+  if (!emitted) return;
+  for (const subscriber of demoSessionSubscribers.get(sessionId) ?? []) {
+    subscriber(emitted);
+  }
+}
+
+function subscribeDemoSession(
+  sessionId: string,
+  onEvent: (event: SessionEvent) => void,
+) {
+  const subscribers = demoSessionSubscribers.get(sessionId) ?? new Set();
+  subscribers.add(onEvent);
+  demoSessionSubscribers.set(sessionId, subscribers);
+  return () => {
+    subscribers.delete(onEvent);
+    if (subscribers.size === 0) demoSessionSubscribers.delete(sessionId);
+  };
+}
 
 function requireDemoController(sessionId: string, attachmentId: unknown) {
   if (
@@ -136,7 +179,7 @@ async function demoInvoke<T>(
         state: "running",
         startedAt: iso(),
         lastActivityAt: iso(),
-        outputPreview: "Session launched in the MVP preview.",
+        outputPreview: "Term Dock preview shell ready.\r\n$ ",
         cursor: 0,
         outputTruncated: false,
         activity: {
@@ -213,6 +256,7 @@ async function demoInvoke<T>(
       const sessionId = args?.sessionId as string;
       requireDemoController(sessionId, args?.attachmentId);
       demoControllerAttachments.delete(sessionId);
+      demoInputBuffers.delete(sessionId);
       return undefined as T;
     }
     case "list_remote_grants":
@@ -242,21 +286,21 @@ async function demoInvoke<T>(
       const sessionId = args?.sessionId as string;
       requireDemoController(sessionId, args?.attachmentId);
       const data = args?.data as string;
-      demoSessions = demoSessions.map((session) =>
-        session.id === sessionId
-          ? {
-              ...session,
-              outputPreview: `${session.outputPreview}\n$ ${data}`,
-              cursor: session.cursor + 1,
-              lastActivityAt: iso(),
-              activity: {
-                state: "running",
-                confidence: "fact",
-                reason: "Recent terminal output",
-              },
-            }
-          : session,
-      );
+      const priorInput = demoInputBuffers.get(sessionId) ?? "";
+      const submitted = `${priorInput}${data}`;
+      if (/[\r\n]/.test(data)) {
+        const command = submitted.replace(/[\r\n]/g, "").trim();
+        demoInputBuffers.delete(sessionId);
+        publishDemoOutput(
+          sessionId,
+          `\r\npreview received: ${command || "(empty command)"}\r\n$ `,
+        );
+      } else {
+        demoInputBuffers.set(sessionId, submitted);
+        // A PTY echoes typed characters. Keeping the preview transport honest
+        // makes browser E2E exercise the same renderer event path.
+        publishDemoOutput(sessionId, data);
+      }
       return undefined as T;
     }
     case "resize_session": {
@@ -284,6 +328,7 @@ async function demoInvoke<T>(
           : session,
       );
       demoControllerAttachments.delete(sessionId);
+      demoInputBuffers.delete(sessionId);
       return undefined as T;
     }
     case "parse_deep_link": {
@@ -324,7 +369,7 @@ const broker = createBrokerClient({
       payload as Record<string, unknown>,
     ),
   subscribe: async (sessionId, cursor, onEvent) => {
-    if (!isNativeHost) return () => undefined;
+    if (!isNativeHost) return subscribeDemoSession(sessionId, onEvent);
     const { listen } = await import("@tauri-apps/api/event");
     let latestCursor = cursor;
     let replayComplete = false;

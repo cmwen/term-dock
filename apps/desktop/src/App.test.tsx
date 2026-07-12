@@ -71,6 +71,18 @@ describe("workspace dashboard", () => {
     ).toBeInTheDocument();
   });
 
+  it("opens a newly launched session instead of leaving its PTY hidden", async () => {
+    render(<App />);
+    fireEvent.click(
+      await screen.findByRole("button", { name: "API migration" }),
+    );
+    await screen.findByRole("heading", { name: "API migration" });
+    fireEvent.click(screen.getByRole("button", { name: "Launch session" }));
+    expect(
+      await screen.findByLabelText("Terminal session"),
+    ).toBeInTheDocument();
+  });
+
   it("issues a scoped one-time remote device grant in the preview", async () => {
     render(<App />);
     await screen.findByRole("button", { name: /Remote access/i });

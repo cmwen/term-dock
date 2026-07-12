@@ -837,6 +837,63 @@ fn main() {
 mod tests {
     use super::*;
 
+    #[cfg(unix)]
+    #[test]
+    fn terminal_pty_round_trip_accepts_input_and_returns_output() {
+        const MARKER: &str = "TERM_DOCK_PTY_E2E_OK";
+        let workspace = Workspace {
+            id: "ws_pty_e2e".into(),
+            name: "PTY end-to-end test".into(),
+            directory: env::current_dir().unwrap().display().to_string(),
+            shell: "/bin/sh".into(),
+            startup_commands: vec![],
+            ssh_target: None,
+            archived: false,
+            created_at: Utc::now(),
+            updated_at: Utc::now(),
+        };
+        let pty = native_pty_system()
+            .openpty(PtySize {
+                rows: 24,
+                cols: 80,
+                pixel_width: 0,
+                pixel_height: 0,
+            })
+            .unwrap();
+        let mut child = pty
+            .slave
+            .spawn_command(build_pty_command(&workspace).unwrap())
+            .unwrap();
+        let mut reader = pty.master.try_clone_reader().unwrap();
+        let mut writer = pty.master.take_writer().unwrap();
+        writer
+            .write_all(format!("printf '{MARKER}\\n'\\n").as_bytes())
+            .unwrap();
+        writer.flush().unwrap();
+
+        let (output_tx, output_rx) = std::sync::mpsc::channel();
+        thread::spawn(move || {
+            let mut output = String::new();
+            let mut buffer = [0_u8; 256];
+            while let Ok(read) = reader.read(&mut buffer) {
+                if read == 0 {
+                    break;
+                }
+                output.push_str(&String::from_utf8_lossy(&buffer[..read]));
+                if output.contains(MARKER) {
+                    let _ = output_tx.send(output);
+                    return;
+                }
+            }
+        });
+
+        let output = output_rx
+            .recv_timeout(Duration::from_secs(5))
+            .expect("PTY did not return the command output in time");
+        assert!(output.contains(MARKER));
+        child.kill().unwrap();
+    }
+
     #[test]
     fn registry_checkpoint_preserves_bounded_output_preview() {
         let path = env::temp_dir().join(format!("term-dock-{}.json", Uuid::new_v4()));

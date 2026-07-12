@@ -39,8 +39,15 @@ The standalone remote web shell is available with `pnpm dev:web`. It connects on
 pnpm lint
 pnpm test
 pnpm build
+pnpm test:e2e
+pnpm build:tauri
 cd apps/desktop/src-tauri && cargo test
 ```
+
+`pnpm build:tauri` creates the native macOS `.app` bundle. The
+continuous-integration pipeline also runs its native Linux `.deb` Tauri build,
+a browser end-to-end terminal interaction test, and the Rust PTY round-trip
+test.
 
 ## Repository layout
 
