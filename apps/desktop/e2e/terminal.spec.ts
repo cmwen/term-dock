@@ -11,6 +11,7 @@ test("launches, renders, and accepts terminal input through the broker", async (
 
   const terminal = page.getByLabel("Terminal session");
   await expect(terminal).toBeVisible();
+  await expect(terminal).toBeInViewport();
   await expect(terminal.getByText(/Connected · controller/)).toBeVisible();
 
   const input = terminal.locator(".xterm-helper-textarea");
