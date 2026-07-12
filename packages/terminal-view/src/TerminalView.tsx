@@ -56,6 +56,7 @@ export default function TerminalView({
   onClose,
   onTerminated,
 }: TerminalViewProps) {
+  const pane = useRef<HTMLElement>(null);
   const mount = useRef<HTMLDivElement>(null);
   const controllerAttachment = useRef<string | undefined>(undefined);
   const [message, setMessage] = useState("Connecting to terminal session…");
@@ -193,15 +194,22 @@ export default function TerminalView({
         if (disposed) cleanup();
         else unsubscribe = cleanup;
         resize();
-        // Opening the pane should make its controller immediately usable.
-        // xterm retains normal click-to-focus behavior after this initial focus.
-        const focus = () => {
-          if (!disposed) terminal.focus();
+        // A terminal opens below the session history. Bring the live surface
+        // into view before focusing its hidden xterm textarea, otherwise a
+        // controller can be active while the user sees no terminal at all.
+        const activateTerminal = () => {
+          if (!disposed) {
+            pane.current?.scrollIntoView?.({
+              behavior: "smooth",
+              block: "start",
+            });
+            terminal.focus();
+          }
         };
         if (typeof requestAnimationFrame === "function") {
-          requestAnimationFrame(focus);
+          requestAnimationFrame(activateTerminal);
         } else {
-          focus();
+          activateTerminal();
         }
       } catch (error) {
         if (acquiredAttachmentId) {
@@ -241,7 +249,7 @@ export default function TerminalView({
   }, [access, client, sessionId]);
 
   return (
-    <section className="terminal-pane" aria-label="Terminal session">
+    <section className="terminal-pane" aria-label="Terminal session" ref={pane}>
       <div className="terminal-heading">
         <div>
           <p className="eyebrow">TERMINAL ATTACHMENT</p>
