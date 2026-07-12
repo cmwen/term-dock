@@ -17,6 +17,36 @@ export interface TerminalViewProps {
   onTerminated?: () => void;
 }
 
+/**
+ * React development remounts effects to find unsafe cleanups. A PTY controller
+ * lease is asynchronous, so serialize acquire/release calls per client/session
+ * rather than briefly asking the broker for two controllers.
+ */
+const attachmentOperations = new WeakMap<
+  BrokerClient,
+  Map<string, Promise<void>>
+>();
+
+function queueAttachmentOperation<T>(
+  client: BrokerClient,
+  sessionId: string,
+  operation: () => Promise<T>,
+) {
+  const operations = attachmentOperations.get(client) ?? new Map();
+  attachmentOperations.set(client, operations);
+  const previous = operations.get(sessionId) ?? Promise.resolve();
+  const next = previous.catch(() => undefined).then(operation);
+  const settled = next.then(
+    () => undefined,
+    () => undefined,
+  );
+  operations.set(sessionId, settled);
+  void settled.finally(() => {
+    if (operations.get(sessionId) === settled) operations.delete(sessionId);
+  });
+  return next;
+}
+
 /** A broker-only terminal surface, usable by the desktop or future web app. */
 export default function TerminalView({
   client,
@@ -69,11 +99,16 @@ export default function TerminalView({
       },
     });
     terminal.open(mount.current);
+    terminal.textarea?.setAttribute(
+      "aria-label",
+      `Terminal input for ${workspace?.name ?? `session ${sessionId}`}`,
+    );
     let disposed = false;
     let attached = false;
     let unsubscribe: (() => void) | undefined;
     let lastSize = "";
     let acquiredAttachmentId: string | undefined;
+    let attachmentCursor = 0;
     const resize = () => {
       if (!attached || !mount.current) return;
       const size = terminalSizeForBounds(
@@ -120,27 +155,32 @@ export default function TerminalView({
     });
     const connect = async () => {
       try {
-        const attachment = await client.attachSession(sessionId, access);
-        if (access === "control" && !attachment.attachmentId) {
-          throw new Error("Broker did not grant a controller attachment.");
-        }
-        acquiredAttachmentId = attachment.attachmentId;
-        if (disposed) {
-          if (acquiredAttachmentId)
-            await client.detachSession(sessionId, acquiredAttachmentId);
-          return;
-        }
-        controllerAttachment.current = attachment.attachmentId;
-        attached = true;
-        terminal.write(attachment.output);
-        setMessage(
-          attachment.outputTruncated
-            ? "Showing bounded replay · connected"
-            : `Connected · ${access === "control" ? "controller" : "viewer"}`,
-        );
+        await queueAttachmentOperation(client, sessionId, async () => {
+          const attachment = await client.attachSession(sessionId, access);
+          if (access === "control" && !attachment.attachmentId) {
+            throw new Error("Broker did not grant a controller attachment.");
+          }
+          acquiredAttachmentId = attachment.attachmentId;
+          attachmentCursor = attachment.cursor;
+          if (disposed) {
+            if (acquiredAttachmentId) {
+              await client.detachSession(sessionId, acquiredAttachmentId);
+            }
+            return;
+          }
+          controllerAttachment.current = attachment.attachmentId;
+          attached = true;
+          terminal.write(attachment.output);
+          setMessage(
+            attachment.outputTruncated
+              ? "Showing bounded replay · connected"
+              : `Connected · ${access === "control" ? "controller" : "viewer"}`,
+          );
+        });
+        if (disposed) return;
         const cleanup = await client.subscribeSession(
           sessionId,
-          attachment.cursor,
+          attachmentCursor,
           (event) => {
             if (event.type === "output") terminal.write(event.data);
             if (event.type === "state") {
@@ -153,14 +193,25 @@ export default function TerminalView({
         if (disposed) cleanup();
         else unsubscribe = cleanup;
         resize();
+        // Opening the pane should make its controller immediately usable.
+        // xterm retains normal click-to-focus behavior after this initial focus.
+        const focus = () => {
+          if (!disposed) terminal.focus();
+        };
+        if (typeof requestAnimationFrame === "function") {
+          requestAnimationFrame(focus);
+        } else {
+          focus();
+        }
       } catch (error) {
         if (acquiredAttachmentId) {
-          if (controllerAttachment.current === acquiredAttachmentId) {
+          const attachmentId = acquiredAttachmentId;
+          if (controllerAttachment.current === attachmentId) {
             controllerAttachment.current = undefined;
           }
-          void client
-            .detachSession(sessionId, acquiredAttachmentId)
-            .catch(() => undefined);
+          void queueAttachmentOperation(client, sessionId, () =>
+            client.detachSession(sessionId, attachmentId),
+          ).catch(() => undefined);
         }
         if (!disposed)
           setMessage(
@@ -174,11 +225,14 @@ export default function TerminalView({
     return () => {
       disposed = true;
       const attachmentId = controllerAttachment.current;
-      controllerAttachment.current = undefined;
-      if (attachmentId)
-        void client
-          .detachSession(sessionId, attachmentId)
-          .catch(() => undefined);
+      if (attachmentId) {
+        if (controllerAttachment.current === attachmentId) {
+          controllerAttachment.current = undefined;
+        }
+        void queueAttachmentOperation(client, sessionId, () =>
+          client.detachSession(sessionId, attachmentId),
+        ).catch(() => undefined);
+      }
       observer?.disconnect();
       input.dispose();
       unsubscribe?.();

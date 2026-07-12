@@ -39,9 +39,14 @@ jobs:
       - run: pnpm lint
       - run: pnpm test
       - run: pnpm build
+      - name: Install browser for end-to-end tests
+        run: pnpm --filter @term-dock/desktop exec playwright install --with-deps chromium
+      - run: pnpm test:e2e
       - run: cargo fmt --check
         working-directory: apps/desktop/src-tauri
       - run: cargo clippy --all-targets -- -D warnings
         working-directory: apps/desktop/src-tauri
       - run: cargo test
         working-directory: apps/desktop/src-tauri
+      - name: Build the native Tauri application
+        run: pnpm --filter @term-dock/desktop tauri build --bundles deb

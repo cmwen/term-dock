@@ -8,6 +8,8 @@ vi.mock("@xterm/xterm", () => ({
   Terminal: class {
     open() {}
     write() {}
+    focus() {}
+    resize() {}
     onData() {
       return { dispose() {} };
     }
